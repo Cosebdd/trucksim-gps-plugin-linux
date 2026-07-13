@@ -1,4 +1,11 @@
 #include "sharedmemory.hpp"
+#include <cstring>
+
+#ifndef _WIN32
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
 
 void SharedMemory::LogError(const char* logPtr) {
 #ifdef SHAREDMEM_LOGGING
@@ -14,7 +21,8 @@ void SharedMemory::LogError(const char* logPtr) {
 #endif
 }
 
-SharedMemory::SharedMemory(LPCWSTR newNamePtr, unsigned int size) {
+#ifdef _WIN32
+SharedMemory::SharedMemory(shm_name_t newNamePtr, unsigned int size) {
     this->mapsize = size;
     this->namePtr = newNamePtr;
     this->isSharedMemoryHooked = false;
@@ -79,3 +87,42 @@ void SharedMemory::Close() {
     isSharedMemoryHooked = false;
 
 }
+#else
+SharedMemory::SharedMemory(shm_name_t newNamePtr, unsigned int size) {
+    this->mapsize = size;
+    this->namePtr = newNamePtr;
+    this->isSharedMemoryHooked = false;
+    this->pBufferPtr = nullptr;
+
+    this->shmFd = shm_open(this->namePtr, O_CREAT | O_RDWR, 0666);
+    if (this->shmFd == -1) {
+        return;
+    }
+
+    if (ftruncate(this->shmFd, size) == -1) {
+        close(this->shmFd);
+        this->shmFd = -1;
+        return;
+    }
+
+    void* mapped = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, this->shmFd, 0);
+    if (mapped == MAP_FAILED) {
+        close(this->shmFd);
+        this->shmFd = -1;
+        return;
+    }
+
+    this->pBufferPtr = mapped;
+    memset(this->pBufferPtr, 0, size);
+    this->isSharedMemoryHooked = true;
+}
+
+void SharedMemory::Close() {
+    if (isSharedMemoryHooked) {
+        if (pBufferPtr != nullptr) munmap(pBufferPtr, mapsize);
+        if (shmFd != -1) close(shmFd);
+        shm_unlink(namePtr);
+    }
+    isSharedMemoryHooked = false;
+}
+#endif

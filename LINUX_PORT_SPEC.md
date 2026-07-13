@@ -65,8 +65,19 @@ is off by default → compiles to nothing on Linux. Port only if logging is enab
 
 ## 5. Status log
 
-- P0 — branch `linux-port`; spec added.
-- **NEXT: P1** — POSIX shared memory.
+- P0 done — branch `linux-port`; spec added.
+- P1 done — POSIX shared memory (`shm_open`/`ftruncate`/`mmap`) behind `#ifdef`.
+- P2 done — Linux MMF name `/TSGPSTelemetry`.
+- P3 done — guarded `scs_telemetry.cpp` (windows.h/DllMain/name type); portable
+  `vsnprintf`; added `<cstdio>`/`<cstring>`.
+- P4 done — `CMakeLists.txt`; **`.so` builds**. Verified: `nm -D` exports
+  `scs_telemetry_init`/`scs_telemetry_shutdown` unmangled; `/TSGPSTelemetry` +
+  `shm_open`/`mmap`/`ftruncate` linked. Windows build untouched.
+- P5 done — README Linux build/install (`bin/linux_x64/plugins/`).
+
+**LINUX PLUGIN PORT COMPLETE on branch `linux-port`** (not merged/pushed). Pairs with
+the server's `linux-port` branch: plugin writes `/dev/shm/TSGPSTelemetry` (32 KB),
+server reads it. See §6 for the one remaining validation gap.
 
 ## 6. Known validation gap
 

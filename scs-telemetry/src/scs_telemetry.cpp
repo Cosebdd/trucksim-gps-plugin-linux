@@ -2,14 +2,18 @@
 
 // TODO: cleanup file 900 lines are to many and there is much to do in an other
 // file or class
+#ifdef _WIN32
 #define WINVER 0x0500
 #define WIN32_WINNT 0x0500
 
 #include <windows.h>
+#endif
 
 #include <algorithm>
 #include <cassert>
 #include <cstdarg>
+#include <cstdio>
+#include <cstring>
 #include <string>
 // SDK
 #include "amtrucks/scssdk_ats.h"
@@ -67,7 +71,11 @@ scsTelemetryMap_t* telem_ptr;
 
 // const: scs_mmf_name
 // Name/Location of the Shared Memory
+#ifdef _WIN32
 const wchar_t* scs_mmf_name = SCS_PLUGIN_MMF_NAME;
+#else
+const char* scs_mmf_name = SCS_PLUGIN_MMF_NAME;
+#endif
 
 // ptr: game_log
 // Used to write to the game log
@@ -95,7 +103,11 @@ void log_line(const scs_log_type_t type, const char* const text, ...) {
 
   va_list args;
   va_start(args, text);
+#ifdef _WIN32
   vsnprintf_s(formated, sizeof formated, _TRUNCATE, text, args);
+#else
+  vsnprintf(formated, sizeof formated, text, args);
+#endif
   formated[sizeof formated - 1] = 0;
   va_end(args);
 
@@ -112,7 +124,11 @@ void log_line(const char* const text, ...) {
 
   va_list args;
   va_start(args, text);
+#ifdef _WIN32
   vsnprintf_s(formated, sizeof formated, _TRUNCATE, text, args);
+#else
+  vsnprintf(formated, sizeof formated, text, args);
+#endif
   formated[sizeof formated - 1] = 0;
   va_end(args);
 
@@ -1213,6 +1229,7 @@ SCSAPI_VOID scs_telemetry_shutdown() {
 
 // Telemetry api.
 
+#ifdef _WIN32
 // ReSharper disable once CppInconsistentNaming
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason_for_call, LPVOID reseved) {
   if (reason_for_call == DLL_PROCESS_DETACH) {
@@ -1220,3 +1237,4 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason_for_call, LPVOID reseved) {
   }
   return TRUE;
 }
+#endif

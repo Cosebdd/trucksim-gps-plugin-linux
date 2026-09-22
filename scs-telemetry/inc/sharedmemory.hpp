@@ -1,6 +1,11 @@
 #ifndef SHAREDMEMORY_HPP
 #define SHAREDMEMORY_HPP
+#ifdef _WIN32
 #include <windows.h>
+typedef LPCWSTR shm_name_t;
+#else
+typedef const char* shm_name_t;
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include "scs-telemetry-common.hpp"
@@ -17,11 +22,15 @@ class SharedMemory
 {
 protected:
 
-        LPCWSTR namePtr;
+        shm_name_t namePtr;
         int mapsize;
 
 		// MMF specifics
+#ifdef _WIN32
         HANDLE hMapFile;
+#else
+        int shmFd;
+#endif
         void* pBufferPtr;
 
 		// Status about hook
@@ -38,7 +47,7 @@ public:
         bool Hooked() { return isSharedMemoryHooked; }
         void* GetBuffer() { return pBufferPtr; }
 
-        SharedMemory(LPCWSTR newNamePtr, unsigned int size);
+        SharedMemory(shm_name_t newNamePtr, unsigned int size);
         void Close();
 
 		void* getPtrAt(int offset) { return (void*) &(((unsigned char*)pBufferPtr)[offset]); }
